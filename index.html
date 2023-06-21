@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="leaflet.css"
+    />
+    <title>Probando Geoserver</title>
+    <script
+      src="./leaflet.js"
+    ></script>
+    <style>
+      body {
+        background-color: black;
+        padding-left: 5vh;
+        padding-right: 5vh;
+      }
+
+      .map-title {
+        color: #ffffff;
+        text-align: center;
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        font-size: 38px;
+        font-weight: bold;
+        text-shadow: 2px 4px 4px rgba(255, 255, 255, 0.753);
+      }
+
+      #map {
+        height: 60vh;
+      }
+
+      /* Estilos para los checkboxes */
+      input[type='checkbox'] {
+        opacity: 0; /* Oculta el checkbox original */
+      }
+
+      /* Estilos para las etiquetas de los checkboxes */
+      label {
+        display: block;
+        position: relative;
+        padding-left: 30px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        font-size: 16px;
+        color: #333;
+        font-weight: bold;
+      }
+
+      /* Estilos para el indicador del checkbox */
+      label:before {
+        content: '';
+        display: inline-block;
+        position: absolute;
+        left: 0;
+        top: 2px;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #999;
+        border-radius: 4px;
+        background-color: #fff;
+      }
+
+      /* Estilos para el indicador del checkbox cuando está marcado */
+      input[type='checkbox']:checked + label:before {
+        content: '✔';
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #1563a3;
+        border-color: black;
+        color: white;
+        font-size: 14px;
+      }
+
+      /* Estilos para el indicador del checkbox cuando el cursor está sobre él */
+      input[type='checkbox']:hover + label:before {
+        border-color: #666;
+      }
+
+      /* Estilos para el texto de la etiqueta cuando el cursor está sobre ella */
+      label:hover {
+        color: #666;
+      }
+
+      .containercheck {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin-top: 5px;
+        background-color: white;
+        padding: 5px;
+        text-align: center;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .legend-content {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+      }
+
+      #legend {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: start;
+        background-color: rgba(255, 255, 255, 0.8);
+        top: 0;
+        border-radius: 5px;
+        font-family: Arial, sans-serif;
+        background-color: white;
+        margin-left: auto;
+      }
+
+      .legend-icon {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        margin-right: 5px;
+        border-radius: 50%;
+      }
+
+      .containerAll {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 5px;
+        text-align: center;
+        margin-left: auto;
+        margin-right: auto;
+        background-color: white;
+      }
+
+      ul {
+        list-style-type: none;
+        padding-left: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 class="map-title">Lugares Turísticos de El Salvador</h1>
+    <div id="map"></div>
+
+    <div class="containerAll">
+      <div id="legend">
+        <ul>
+          <h3>Leyenda</h3>
+          <li>
+            <span class="legend-icon" style="background-color: #7c7878"></span
+            >Municipios
+          </li>
+          <li>
+            <span class="legend-icon" style="background-color: #ee1717"></span
+            >Turismo - El Salvador
+          </li>
+          <li>
+            <span class="legend-icon" style="background-color: #4b4444"></span
+            >Turismo - Líneas
+          </li>
+          <li>
+            <span class="legend-icon" style="background-color: #000000"></span
+            >Turismo - Polígonos
+          </li>
+        </ul>
+      </div>
+
+      <div class="containercheck">
+        <h3>Control de Capas</h3>
+        <div class="legend-content">
+          <input type="checkbox" id="municipiosCheckbox" checked />
+          <label for="municipiosCheckbox">Municipios</label>
+
+          <input type="checkbox" id="tourismPointsCheckbox" checked />
+          <label for="tourismPointsCheckbox">Puntos de turismo</label>
+
+          <input type="checkbox" id="tourismLinesCheckbox" checked />
+          <label for="tourismLinesCheckbox">Líneas de turismo</label>
+
+          <input type="checkbox" id="tourismPolygonCheckbox" checked />
+          <label for="tourismPolygonCheckbox">Polígonos de turismo</label>
+        </div>
+        <h3>Control de Mapa</h3>
+        <div class="legend-content">
+            <input type="checkbox" id="mapCheckbox" checked>
+            <label for="mapCheckbox">OpenStreetMap</label>
+         
+        </div>
+      </div>
+    </div>
+    <script>
+        var map = L.map('map',{center: [13.8333, -88.9167], 
+        zoom: 9,
+        scrollWheelZoom: true,
+        tap: true,
+    });
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    var wmsLayer = L.tileLayer.wms("http://localhost:8080/geoserver/trabajo_practico/wms", {
+    layers: 'trabajo_practico:municipios',
+    format: 'image/png',
+    transparent: true,
+    
+}).addTo(map);
+
+
+var wmsLayerTourismPoints = L.tileLayer.wms("http://localhost:8080/geoserver/trabajo_practico/wms", {
+    layers: 'trabajo_practico:tourism_El Salvador',
+    format: 'image/png',
+    transparent: true,
+    
+}).addTo(map);
+
+var wmsLayerTourismLines = L.tileLayer.wms("http://localhost:8080/geoserver/trabajo_practico/wms", {
+    layers: 'trabajo_practico:tourism_lines',
+    format: 'image/png',
+    transparent: true,
+    
+}).addTo(map);
+
+var wmsLayerTourismPolygon = L.tileLayer.wms("http://localhost:8080/geoserver/trabajo_practico/wms", {
+    layers: 'trabajo_practico:tourism_polygon',
+    format: 'image/png',
+    transparent: true,
+    
+}).addTo(map);
+
+
+// Obtiene los elementos de los checkboxes
+var municipiosCheckbox = document.getElementById('municipiosCheckbox');
+var tourismPointsCheckbox = document.getElementById('tourismPointsCheckbox');
+var tourismLinesCheckbox = document.getElementById('tourismLinesCheckbox');
+var tourismPolygonCheckbox = document.getElementById('tourismPolygonCheckbox');
+var mapCheckbox = document.getElementById('mapCheckbox');
+
+
+mapCheckbox.addEventListener('change', function () {
+  if (mapCheckbox.checked) {
+    tileLayer.addTo(map);
+  } else {
+    map.removeLayer(tileLayer);
+  }
+});
+
+
+// Escucha el evento de cambio de cada checkbox
+municipiosCheckbox.addEventListener('change', function() {
+  if (municipiosCheckbox.checked) {
+    map.addLayer(wmsLayer);
+  } else {
+    map.removeLayer(wmsLayer);
+  }
+});
+
+tourismPointsCheckbox.addEventListener('change', function() {
+  if (tourismPointsCheckbox.checked) {
+    map.addLayer(wmsLayerTourismPoints);
+  } else {
+    map.removeLayer(wmsLayerTourismPoints);
+  }
+});
+
+tourismLinesCheckbox.addEventListener('change', function() {
+  if (tourismLinesCheckbox.checked) {
+    map.addLayer(wmsLayerTourismLines);
+  } else {
+    map.removeLayer(wmsLayerTourismLines);
+  }
+});
+
+tourismPolygonCheckbox.addEventListener('change', function() {
+  if (tourismPolygonCheckbox.checked) {
+    map.addLayer(wmsLayerTourismPolygon);
+  } else {
+    map.removeLayer(wmsLayerTourismPolygon);
+  }
+});
+
+
+
+    </script>
+  </body>
+</html>
